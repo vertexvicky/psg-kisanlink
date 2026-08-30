@@ -1,0 +1,76 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "users": {
+      ".read": "auth != null",
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid === $uid",
+        ".validate": "newData.hasChildren(['uid', 'email', 'displayName', 'createdAt'])"
+      }
+    },
+    "products": {
+      ".read": "auth != null",
+      ".indexOn": ["farmerId", "cropKey", "isActive", "pricePerUnit"],
+      "$productId": {
+        ".write": "auth != null && (!newData.exists() ? (data.child('farmerId').val() === auth.uid) : ((root.child('users').child(auth.uid).child('role').val() === 'farmer') && (!data.exists() || data.child('farmerId').val() === auth.uid) && (newData.child('farmerId').val() === auth.uid)))",
+        ".validate": "newData.hasChildren(['productId', 'farmerId', 'cropName', 'pricePerUnit', 'unit', 'availableQuantity', 'isActive']) && newData.child('pricePerUnit').isNumber() && newData.child('pricePerUnit').val() > 0 && newData.child('availableQuantity').isNumber() && newData.child('availableQuantity').val() >= 0"
+      }
+    },
+    "tenders": {
+      ".read": "auth != null",
+      ".indexOn": ["buyerId", "targetFarmerId", "cropName", "status", "tenderType"],
+      "$tenderId": {
+        ".write": "auth != null && (!newData.exists() ? (data.child('buyerId').val() === auth.uid) : ((root.child('users').child(auth.uid).child('role').val() === 'buyer') && (!data.exists() || data.child('buyerId').val() === auth.uid) && (newData.child('buyerId').val() === auth.uid)))",
+        ".validate": "newData.hasChildren(['tenderId', 'buyerId', 'cropName', 'tenderType', 'requiredQuantity', 'unit', 'status', 'expiresAt']) && newData.child('tenderType').val().matches(/^(open|direct)$/) && newData.child('status').val().matches(/^(open|closed|awarded)$/)"
+      }
+    },
+    "bids": {
+      ".read": "auth != null",
+      "$tenderId": {
+        ".read": "auth != null",
+        ".indexOn": ["farmerId", "bidPricePerUnit", "createdAt"],
+        "$bidId": {
+          ".write": "auth != null && (!newData.exists() ? (data.child('farmerId').val() === auth.uid || root.child('tenders').child($tenderId).child('buyerId').val() === auth.uid) : ((root.child('users').child(auth.uid).child('role').val() === 'farmer') && (!data.exists() || data.child('farmerId').val() === auth.uid) && (newData.child('farmerId').val() === auth.uid) && (root.child('tenders').child($tenderId).child('status').val() === 'open') && (root.child('tenders').child($tenderId).child('tenderType').val() === 'open' || root.child('tenders').child($tenderId).child('targetFarmerId').val() === auth.uid)))",
+          ".validate": "newData.hasChildren(['bidId', 'tenderId', 'farmerId', 'bidPricePerUnit', 'offeredQuantity', 'unit']) && newData.child('bidPricePerUnit').isNumber() && newData.child('bidPricePerUnit').val() > 0"
+        }
+      }
+    },
+    "farmer_topics": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'farmer'",
+      ".indexOn": ["lastMessageTimestamp", "cropName"],
+      "$topicId": {
+        ".write": "auth != null && (!newData.exists() ? (data.child('creatorId').val() === auth.uid) : (root.child('users').child(auth.uid).child('role').val() === 'farmer'))",
+        ".validate": "newData.hasChildren(['topicId', 'title', 'creatorId', 'createdAt'])"
+      }
+    },
+    "farmer_messages": {
+      "$topicId": {
+        ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'farmer'",
+        ".indexOn": ["timestamp"],
+        "$messageId": {
+          ".write": "auth != null && (!newData.exists() ? (data.child('senderId').val() === auth.uid) : (root.child('users').child(auth.uid).child('role').val() === 'farmer' && !data.exists() && newData.child('senderId').val() === auth.uid))",
+          ".validate": "newData.hasChildren(['messageId', 'topicId', 'senderId', 'text', 'timestamp']) && newData.child('text').isString() && newData.child('text').val().length > 0 && newData.child('text').val().length <= 1000"
+        }
+      }
+    },
+    "price_analytics": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$cropKey": {
+        ".validate": "newData.hasChildren(['cropName', 'minPrice', 'maxPrice', 'avgPrice', 'lastUpdated'])"
+      }
+    },
+    "notifications": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        "$notificationId": {
+          ".write": "auth != null",
+          ".validate": "newData.hasChildren(['notificationId', 'recipientId', 'type', 'title', 'body', 'timestamp'])"
+        }
+      }
+    }
+  }
+}
