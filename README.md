@@ -35,7 +35,7 @@ KisanLink is a modern, high-performance web platform connecting agricultural pro
 
 ### 1. Clone & Install Dependencies
 ```bash
-git clone <your-repository-url>
+git clone https://github.com/vertexvicky/psg-kisanlink.git
 cd kisanlink
 npm install
 ```
@@ -115,8 +115,3 @@ kisanlink/
     ├── main.js                 # App entry point and client-side hash router
     └── utils.js                # Formatting helpers and utility functions
 ```
-
----
-
-## 📄 License
-MIT License
